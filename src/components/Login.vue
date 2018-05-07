@@ -19,16 +19,16 @@ export default {
       firebase
         .auth()
         .signInWithPopup(provider)
-        .then(function (result) {
+        .then(result => {
           // This gives you a GitHub Access Token. You can use it to access the GitHub API.
-          var token = result.credential.accessToken
-          console.log(token)
+          // var token = result.credential.accessToken
+          this.$router.push('/')
           // The signed-in user info.
           // var user = result.user
           // ...
         })
         .catch(function (error) {
-          console.log(error.code)
+          console.log(error)
           // // Handle Errors here.
           // var errorCode = error.code
           // var errorMessage = error.message

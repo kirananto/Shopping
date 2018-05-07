@@ -21,7 +21,7 @@
       <span v-on:click="viewCart" class="nav-link"><i class="fas fa-shopping-cart"></i></span>
     </div>
     <div class="nav-item">
-      <a href="#" class="nav-link"><img :src="currentUser.photoURL" class="user-img" alt=""></a>
+      <span class="nav-link"><img v-on:click="signout" :src="currentUser.photoURL" class="user-img" alt=""></span>
     </div>
   </div>
 </nav>
@@ -126,6 +126,13 @@ export default {
         querySnapshot.forEach(doc => {
           this.products.push(doc.data())
         })
+      })
+    },
+    signout: function () {
+      console.log('he')
+      firebase.auth().signOut().then(succ => {
+        console.log('he')
+        this.$router.replace('/login')
       })
     },
     typ: function (val) {
