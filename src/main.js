@@ -13,6 +13,19 @@ firebase.initializeApp(store.getters.getFirebaseConfig)
 
 let app
 
+router.beforeEach((to, from, next) => {
+  let currentUser = firebase.auth().currentUser
+  let requiresAuth = to.matched.some(record => record.meta.requiresAuth)
+  if (requiresAuth && !currentUser) {
+    next({
+      path: '/login',
+      query: {redirect: to.fullPath}
+    })
+  } else {
+    next()
+  }
+})
+
 sync(store, router)
 
 firebase.auth().onAuthStateChanged(

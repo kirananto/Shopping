@@ -1,113 +1,207 @@
 <template>
-  <div class="hello">
-    <h1>{{ msg }}</h1>
-    <h2>Essential Links</h2>
-    <ul>
-      <li>
-        <a
-          href="https://vuejs.org"
-          target="_blank"
-        >
-          Core Docs
-        </a>
+  <div class="hello ">
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+  <a class="navbar-brand" href="#"> <img src="/static/shopping.svg" class="img-logo" alt=""></a>
+  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+    <span class="navbar-toggler-icon"></span>
+  </button>
+
+  <div class="collapse navbar-collapse" id="navbarSupportedContent">
+    <ul class="navbar-nav mr-auto">
+      <li class="nav-item active">
+        <a class="nav-link" href="#">ONESTOP SHOPPING <span class="sr-only">(current)</span></a>
       </li>
       <li>
-        <a
-          href="https://forum.vuejs.org"
-          target="_blank"
-        >
-          Forum
-        </a>
-      </li>
-      <li>
-        <a
-          href="https://chat.vuejs.org"
-          target="_blank"
-        >
-          Community Chat
-        </a>
-      </li>
-      <li>
-        <a
-          href="https://twitter.com/vuejs"
-          target="_blank"
-        >
-          Twitter
-        </a>
-      </li>
-      <br>
-      <li>
-        <a
-          href="http://vuejs-templates.github.io/webpack/"
-          target="_blank"
-        >
-          Docs for This Template
-        </a>
+      <form class="form-inline">
+        <input class="form-control mr-sm-2 search" v-model="searchtext" type="search" placeholder="Search" aria-label="Search">
+      </form>
       </li>
     </ul>
-    <h2>Ecosystem</h2>
-    <ul>
-      <li>
-        <a
-          href="http://router.vuejs.org/"
-          target="_blank"
-        >
-          vue-router
-        </a>
-      </li>
-      <li>
-        <a
-          href="http://vuex.vuejs.org/"
-          target="_blank"
-        >
-          vuex
-        </a>
-      </li>
-      <li>
-        <a
-          href="http://vue-loader.vuejs.org/"
-          target="_blank"
-        >
-          vue-loader
-        </a>
-      </li>
-      <li>
-        <a
-          href="https://github.com/vuejs/awesome-vue"
-          target="_blank"
-        >
-          awesome-vue
-        </a>
-      </li>
-    </ul>
+    <div class="nav-item">
+      <a href="#" class="nav-link"><img :src="currentUser.photoURL" class="user-img" alt=""></a>
+    </div>
+  </div>
+</nav>
+<div class="container-fluid">
+  <div class="row">
+    <div class=" filters col-md-3">
+      <div class="filter card container">
+        <h2 class="h-filter">FILTERS</h2>
+        <div class="row " style="margin-top:2rem;">
+          <div class="col">
+            <strong>SORT BY :</strong>
+          </div>
+          <div class="col">
+          <button @click="sort('pricea')" class="btn btn-primary">PRICE ASC</button>
+          <button @click="sort('priced')" class="btn btn-primary">PRICE DESC</button>
+          <button @click="sort('ratinga')" class="btn btn-primary">RATING ASC</button>
+          <button @click="sort('ratingd')" class="btn btn-primary">RATING DESC</button>
+          </div>
+        </div><div class="row" style="margin-top:2rem;">
+          <div class="col">
+          <strong>TYPE</strong>
+          </div><div class="col">
+          <button @click="typ('car')" class="btn btn-primary">CAR</button>
+          <button @click="typ('phone')" class="btn btn-primary">PHONE</button>
+        </div>
+        </div>
+      </div>
+    </div>
+    <div class="products col-md-9 container">
+      <div class="row" v-if="products.length >0">
+        <div class="card product" v-for="(prod,k) in products" :key="k" style="width: 18rem;">
+          <img class="card-img-top" :src="prod.photoURL" alt="Card image cap">
+          <div class="card-body">
+            <h5 class="card-title">{{prod.title}}</h5>
+            <p class="card-text">Some quick example text to build on the card title and make up the bulk of the card's content.</p>
+            <span><strong>PRICE : {{prod.price}}</strong></span>
+            <a href="#" class="btn btn-primary">ADD TO CART</a>
+          </div>
+        </div>
+
+      </div>
+      <div class="row" v-else>
+        <div class="card col-md-11" style="min-height: 20rem;">
+          <h2 style="font-weight: 900; margin-top: 10rem;">SORRY NO PRODUCTS</h2>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
   </div>
 </template>
 
 <script>
+import firebase from 'firebase'
+require('firebase/firestore')
 export default {
   name: 'Home',
   data () {
     return {
-      msg: 'Welcome to Your Vue.js App'
+      searchtext: null,
+      products: []
     }
+  },
+  methods: {
+    sort: function (val) {
+      switch (val) {
+        case 'pricea':
+          firebase.firestore().collection('products').orderBy('price').get().then(querySnapshot => {
+            this.products = []
+            querySnapshot.forEach(doc => {
+              this.products.push(doc.data())
+            })
+          })
+          break
+        case 'priced':
+          firebase.firestore().collection('products').orderBy('price', 'desc').get().then(querySnapshot => {
+            this.products = []
+            querySnapshot.forEach(doc => {
+              this.products.push(doc.data())
+            })
+          })
+          break
+        case 'ratinga':
+          firebase.firestore().collection('products').orderBy('rating', 'desc').get().then(querySnapshot => {
+            this.products = []
+            querySnapshot.forEach(doc => {
+              this.products.push(doc.data())
+            })
+          })
+          break
+        case 'ratingd':
+          firebase.firestore().collection('products').orderBy('rating', 'desc').get().then(querySnapshot => {
+            this.products = []
+            querySnapshot.forEach(doc => {
+              this.products.push(doc.data())
+            })
+          })
+          break
+        default:
+          break
+      }
+    },
+    typ: function (val) {
+      firebase.firestore().collection('products').where('type', '==', val).get().then(querySnapshot => {
+        this.products = []
+        querySnapshot.forEach(doc => {
+          this.products.push(doc.data())
+        })
+      })
+    }
+  },
+  computed: {
+    currentUser: () => firebase.auth().currentUser
+  },
+  mounted () {
+    firebase.firestore().collection('products').get().then(querySnapshot => {
+      this.products = []
+      querySnapshot.forEach(doc => {
+        this.products.push(doc.data())
+      })
+    })
   }
 }
 </script>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
-h1, h2 {
-  font-weight: normal;
+.search {
+  background: rgb(231, 231, 231);
+  border: none;
+  margin-left: 10%;
+  width: 80rem;
+  height: 2.5rem;
 }
-ul {
-  list-style-type: none;
-  padding: 0;
+.filters {
+  margin-top: 2rem;
+  padding-left: 3rem;
 }
-li {
-  display: inline-block;
-  margin: 0 10px;
+.btn {
+  margin: .3rem;
+  min-width: 10rem;
+}
+.filter {
+  padding-top: 2rem;
+  min-height: 30rem;
+  /* border-radius: 1rem; */
+  /* background: white; */
+}
+.products {
+  margin-top: 2rem;
+  padding-left: 3rem;
+}
+.product {
+  background: white;
+  margin-left: 1rem;
+  min-height: 15rem;
+  border-radius: 1rem;
+}
+.nav-back {
+  background: white;
 }
 a {
-  color: #42b983;
+  font-weight: 900;
+}
+.user-img {
+  float: left;
+  height: 3rem;
+  border-radius: 2rem;
+  width: auto;
+}
+.img-logo {
+  height: 2rem;
+  margin-left: 2rem;
+  width: auto;
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+}
+
+.text-logo {
+  font-weight: 800;
+  font-size: 30pt;
+  margin-top: 1rem;
+  margin-left: 3rem;
+  kerning: 2em;
 }
 </style>
