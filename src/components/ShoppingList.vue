@@ -41,10 +41,15 @@
     <button class="clear-completed" @click="removeCompleted" v-show="todos.length > remaining">
       Clear completed
     </button>
+    <button class="clear-completed" v-on:click="share">
+    <i class="fas fa-share-alt"></i> </button>
   </footer>
 </section>
 </template>
 <script>
+import firebase from 'firebase'
+import swal from 'sweetalert'
+require('firebase/firestore')
 // visibility filters
 var filters = {
   all: function (todos) {
@@ -64,7 +69,7 @@ var filters = {
 
 // app Vue instance
 export default {
-  props: ['todos'],
+  props: ['todos', 'todoid', 'sharedWith'],
   data () {
     return {
       newTodo: '',
@@ -76,7 +81,10 @@ export default {
   watch: {
     todos: {
       handler: function (todos) {
-        console.log('c')
+        console.log(this.todoid)
+        firebase.firestore().doc(`notes/${this.currentUser.uid}/myNotes/${this.todoid}`).set({content: todos, sharedWith: this.sharedWith}).then(succ => {
+          console.log('success')
+        })
       },
       deep: true
     }
@@ -85,6 +93,7 @@ export default {
   // computed properties
   // http://vuejs.org/guide/computed.html
   computed: {
+    currentUser: () => firebase.auth().currentUser,
     filteredTodos: function () {
       return filters[this.visibility](this.todos)
     },
@@ -112,6 +121,13 @@ export default {
   // methods that implement data logic.
   // note there's no DOM manipulation here at all.
   methods: {
+    share: function () {
+      firebase.firestore().doc(`notes/${this.currentUser.uid}/myNotes/${this.todoid}`).set({content: this.todos, sharedWith: '9XagxNNC4uSwfub7YMgMfFauNMI2'}).then(succ => {
+        firebase.firestore().collection(`notes/9XagxNNC4uSwfub7YMgMfFauNMI2/shared`).add({from: this.currentUser.uid, noteId: this.todoid}).then(succ => {
+          swal('successfully shared')
+        })
+      })
+    },
     addTodo: function () {
       var value = this.newTodo && this.newTodo.trim()
       if (!value) {
@@ -124,7 +140,6 @@ export default {
       })
       this.newTodo = ''
     },
-
     removeTodo: function (todo) {
       this.todos.splice(this.todos.indexOf(todo), 1)
     },

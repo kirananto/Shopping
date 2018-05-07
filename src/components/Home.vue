@@ -23,18 +23,23 @@
   </div>
 </nav>
 <div class="container-fluid">
-  <div class="row">
+  <div class="row" style="margin-right: 2rem;">
     <div class="products col-md-12 container">
+      <h2>My Notes</h2>
       <div class="row" v-if="myNotes.length > 0">
         <div v-for="(todos,k) in myNotes" :key="k" class="col">
-        <shopping-list class="container" style="margin:1rem; padding: 1rem; min-height: 10rem;" :todos="todos.content"></shopping-list>
+        <shopping-list class="container" style="margin:1rem; padding: 1rem; min-height: 10rem;" :todoid="todos.id" :sharedWith="todos.sharedWith" :todos="todos.content"></shopping-list>
         </div>
       </div>
-      <!-- <div class="row" v-else>
-        <div class="card col-md-11" style="min-height: 20rem;">
-          <h2 style="font-weight: 900; margin-top: 10rem;">SORRY NO Notes</h2>
+    </div>
+    <div class="products col-md-12 container">
+
+      <h2>Shared Notes</h2>
+      <div class="row" v-if="myNotes.length > 0">
+        <div v-for="(todos,k) in SharedNotes" :key="k" class="col">
+        <shopping-list class="container" style="margin:1rem; padding: 1rem; min-height: 10rem;" :todoid="todos.id" :sharedWith="todos.sharedWith" :todos="todos.content"></shopping-list>
         </div>
-      </div> -->
+      </div>
     </div>
   </div>
 </div>
@@ -44,14 +49,12 @@
    :actions="fabActions"
    @add="add"
 ></fab>
-<sweet-modal ref="modal" width="80%">
-</sweet-modal>
+
   </div>
 </template>
 
 <script>
 import firebase from 'firebase'
-import { SweetModal, SweetModalTab } from 'sweet-modal-vue'
 import fab from 'vue-fab'
 import swal from 'sweetalert'
 import ShoppingList from './ShoppingList'
@@ -59,8 +62,6 @@ require('firebase/firestore')
 export default {
   name: 'Home',
   components: {
-    SweetModal,
-    SweetModalTab,
     fab,
     ShoppingList
   },
@@ -83,17 +84,6 @@ export default {
       ]
     }
   },
-  watch: {
-    myNotes (newVal) {
-      console.log('changed')
-      var vm = this
-      newVal.forEach(function (doc, index) {
-        if (doc.content !== vm.oldNotes[index].content) {
-          console.log()
-        }
-      })
-    }
-  },
   methods: {
     setValue () {
       this.oldNotes = this.myNotes
@@ -101,6 +91,7 @@ export default {
     add () {
       this.myNotes.push({
         title: 'SHOPPING LIST',
+        id: Math.random().toString(36).replace(/[^a-z]+/g, '').substr(0, 5),
         content: [],
         sharedWith: null
       })
@@ -122,7 +113,6 @@ export default {
   mounted () {
     firebase.firestore().collection('notes').doc(this.currentUser.uid).collection('myNotes').get().then(querySnapshot => {
       this.myNotes = []
-      console.log('h')
       querySnapshot.forEach(doc => {
         var dat = doc.data()
         dat.content.forEach(function (todo, index) {
@@ -132,6 +122,20 @@ export default {
         this.myNotes.push(dat)
       })
       this.setValue()
+    })
+
+    firebase.firestore().collection(`notes/${this.currentUser.uid}/shared`).get().then(querySnapshot => {
+      this.SharedNotes = []
+      querySnapshot.forEach(doc => {
+        firebase.firestore().doc(`notes/${doc.data().from}/myNotes/${doc.data().noteId}`).get().then(docget => {
+          var shareddat = docget.data()
+          shareddat.content.forEach(function (todo, index) {
+            todo.id = index
+          })
+          shareddat.id = doc.id
+          this.SharedNotes.push(shareddat)
+        })
+      })
     })
   }
 }
