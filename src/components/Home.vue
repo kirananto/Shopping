@@ -18,6 +18,9 @@
       </li>
     </ul>
     <div class="nav-item">
+      <span v-on:click="viewCart" class="nav-link"><i class="fas fa-shopping-cart"></i></span>
+    </div>
+    <div class="nav-item">
       <a href="#" class="nav-link"><img :src="currentUser.photoURL" class="user-img" alt=""></a>
     </div>
   </div>
@@ -32,10 +35,10 @@
             <strong>SORT BY :</strong>
           </div>
           <div class="col">
-          <button @click="sort('pricea')" class="btn btn-primary">PRICE ASC</button>
-          <button @click="sort('priced')" class="btn btn-primary">PRICE DESC</button>
-          <button @click="sort('ratinga')" class="btn btn-primary">RATING ASC</button>
-          <button @click="sort('ratingd')" class="btn btn-primary">RATING DESC</button>
+          <button @click="sort('price', 'asc')" class="btn btn-primary">PRICE ASC</button>
+          <button @click="sort('price', 'desc')" class="btn btn-primary">PRICE DESC</button>
+          <button @click="sort('rating', 'asc')" class="btn btn-primary">RATING ASC</button>
+          <button @click="sort('rating', 'desc')" class="btn btn-primary">RATING DESC</button>
           </div>
         </div><div class="row" style="margin-top:2rem;">
           <div class="col">
@@ -55,7 +58,7 @@
             <h5 class="card-title">{{prod.title}}</h5>
             <p class="card-text">Some quick example text to build on the card title and make up the bulk of the card's content.</p>
             <span><strong>PRICE : {{prod.price}}</strong></span>
-            <a href="#" class="btn btn-primary">ADD TO CART</a>
+            <a href="#" class="btn btn-primary" @click="addToCart(prod)">ADD TO CART</a>
           </div>
         </div>
 
@@ -68,58 +71,62 @@
     </div>
   </div>
 </div>
+
+<sweet-modal ref="modal" width="80%">
+  <h2>MY CART</h2>
+  <div class="container-fluid">
+      <div class="row">
+        <div class="card product" v-for="(prod,k) in cart.products" :key="k" style="width: 18rem;">
+          <img class="card-img-top" :src="prod.photoURL" alt="Card image cap">
+          <div class="card-body">
+            <h5 class="card-title">{{prod.title}}</h5>
+            <p class="card-text">Some quick example text to build on the card title and make up the bulk of the card's content.</p>
+            <span><strong>PRICE : {{prod.price}}</strong></span>
+            <a href="#" class="btn btn-primary" @click="addToCart(prod)">ADD TO CART</a>
+          </div>
+        </div>
+         <div class="card product"  style="width: 38rem;">
+          <div class="card-body">
+            <h5 class="card-title">CART SUMMARY</h5>
+            <p class="card-text"><strong>TOTAL AMOUNT : {{cart.total}}</strong></p>
+            <a href="#" class="btn btn-primary" @click="swal('Congrats')">CHECKOUT</a>
+          </div>
+        </div>
+      </div>
+    </div>
+</sweet-modal>
   </div>
 </template>
 
 <script>
 import firebase from 'firebase'
+import { SweetModal, SweetModalTab } from 'sweet-modal-vue'
+import swal from 'sweetalert'
 require('firebase/firestore')
 export default {
   name: 'Home',
+  components: {
+    SweetModal,
+    SweetModalTab
+  },
   data () {
     return {
       searchtext: null,
-      products: []
+      products: [],
+      cart: {
+        products: [],
+        total: null
+      }
     }
   },
   methods: {
-    sort: function (val) {
-      switch (val) {
-        case 'pricea':
-          firebase.firestore().collection('products').orderBy('price').get().then(querySnapshot => {
-            this.products = []
-            querySnapshot.forEach(doc => {
-              this.products.push(doc.data())
-            })
-          })
-          break
-        case 'priced':
-          firebase.firestore().collection('products').orderBy('price', 'desc').get().then(querySnapshot => {
-            this.products = []
-            querySnapshot.forEach(doc => {
-              this.products.push(doc.data())
-            })
-          })
-          break
-        case 'ratinga':
-          firebase.firestore().collection('products').orderBy('rating', 'desc').get().then(querySnapshot => {
-            this.products = []
-            querySnapshot.forEach(doc => {
-              this.products.push(doc.data())
-            })
-          })
-          break
-        case 'ratingd':
-          firebase.firestore().collection('products').orderBy('rating', 'desc').get().then(querySnapshot => {
-            this.products = []
-            querySnapshot.forEach(doc => {
-              this.products.push(doc.data())
-            })
-          })
-          break
-        default:
-          break
-      }
+    sort: function (val, order) {
+      firebase.firestore().collection('products').orderBy(val, order).get().then(querySnapshot => {
+        this.products = []
+        querySnapshot.forEach(doc => {
+          this.products.push(doc.data())
+        })
+      })
     },
     typ: function (val) {
       firebase.firestore().collection('products').where('type', '==', val).get().then(querySnapshot => {
@@ -127,6 +134,29 @@ export default {
         querySnapshot.forEach(doc => {
           this.products.push(doc.data())
         })
+      })
+    },
+    addToCart: function (product) {
+      firebase.firestore().collection('user').doc(this.currentUser.uid).collection('cart').add(product).then(success => {
+        swal('Success', 'Added to card', 'success')
+      }).catch(err => {
+        console.log(err)
+        swal('Oops!', 'Something went wrong!', 'error')
+      })
+    },
+    swal: function (mes) {
+      swal(mes)
+    },
+    viewCart: function () {
+      console.log('d')
+      firebase.firestore().collection('user').doc(this.currentUser.uid).collection('cart').get().then(querySnapshot => {
+        this.cart.products = []
+        this.cart.total = 0
+        querySnapshot.forEach(doc => {
+          this.cart.products.push(doc.data())
+          this.cart.total += doc.data().price
+        })
+        this.$refs.modal.open()
       })
     }
   },
