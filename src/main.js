@@ -3,13 +3,28 @@
 import Vue from 'vue'
 import App from './App'
 import router from './router'
+import store from './store'
+import firebase from 'firebase'
+import { sync } from 'vuex-router-sync'
 
 Vue.config.productionTip = false
 
-/* eslint-disable no-new */
-new Vue({
-  el: '#app',
-  router,
-  components: { App },
-  template: '<App/>'
-})
+firebase.initializeApp(store.getters.getFirebaseConfig)
+
+let app
+
+sync(store, router)
+
+firebase.auth().onAuthStateChanged(
+  function (user) {
+    if (!app) {
+      /* eslint-disable no-new */
+      app = new Vue({
+        el: '#app',
+        store,
+        router,
+        components: { App },
+        template: '<App/>'
+      })
+    }
+  })
