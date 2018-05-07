@@ -82,7 +82,7 @@
             <h5 class="card-title">{{prod.title}}</h5>
             <p class="card-text">Some quick example text to build on the card title and make up the bulk of the card's content.</p>
             <span><strong>PRICE : {{prod.price}}</strong></span>
-            <a href="#" class="btn btn-primary" @click="addToCart(prod)">ADD TO CART</a>
+            <a href="#" class="btn btn-primary" @click="remove(prod)">REMOVE</a>
           </div>
         </div>
          <div class="card product"  style="width: 38rem;">
@@ -147,13 +147,30 @@ export default {
     swal: function (mes) {
       swal(mes)
     },
+    remove: function (prod) {
+      firebase.firestore().collection('user').doc(this.currentUser.uid).collection('cart').doc(prod.id).delete().then(succ => {
+        swal('Success', 'Removed from cart', 'success')
+        firebase.firestore().collection('user').doc(this.currentUser.uid).collection('cart').get().then(querySnapshot => {
+          this.cart.products = []
+          this.cart.total = 0
+          querySnapshot.forEach(doc => {
+            var d = doc.data()
+            d.id = doc.id
+            this.cart.products.push(d)
+            this.cart.total += doc.data().price
+          })
+        })
+      })
+    },
     viewCart: function () {
       console.log('d')
       firebase.firestore().collection('user').doc(this.currentUser.uid).collection('cart').get().then(querySnapshot => {
         this.cart.products = []
         this.cart.total = 0
         querySnapshot.forEach(doc => {
-          this.cart.products.push(doc.data())
+          var d = doc.data()
+          d.id = doc.id
+          this.cart.products.push(d)
           this.cart.total += doc.data().price
         })
         this.$refs.modal.open()
