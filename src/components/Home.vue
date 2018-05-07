@@ -1,5 +1,5 @@
 <template>
-  <div class="hello ">
+  <div class="hello">
     <nav class="navbar navbar-expand-lg navbar-light bg-light">
   <a class="navbar-brand" href="#"> <img src="/static/shopping.svg" class="img-logo" alt=""></a>
   <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
@@ -9,7 +9,7 @@
   <div class="collapse navbar-collapse" id="navbarSupportedContent">
     <ul class="navbar-nav mr-auto">
       <li class="nav-item active">
-        <a class="nav-link" href="#">ONESTOP SHOPPING <span class="sr-only">(current)</span></a>
+        <a class="nav-link" href="#">SHOPPING LIST<span class="sr-only">(current)</span></a>
       </li>
       <li>
       <form class="form-inline">
@@ -18,82 +18,33 @@
       </li>
     </ul>
     <div class="nav-item">
-      <span v-on:click="viewCart" class="nav-link"><i class="fas fa-shopping-cart"></i></span>
-    </div>
-    <div class="nav-item">
       <span class="nav-link"><img v-on:click="signout" :src="currentUser.photoURL" class="user-img" alt=""></span>
     </div>
   </div>
 </nav>
 <div class="container-fluid">
   <div class="row">
-    <div class=" filters col-md-3">
-      <div class="filter card container">
-        <h2 class="h-filter">FILTERS</h2>
-        <div class="row " style="margin-top:2rem;">
-          <div class="col">
-            <strong>SORT BY :</strong>
-          </div>
-          <div class="col">
-          <button @click="sort('price', 'asc')" class="btn btn-primary">PRICE ASC</button>
-          <button @click="sort('price', 'desc')" class="btn btn-primary">PRICE DESC</button>
-          <button @click="sort('rating', 'asc')" class="btn btn-primary">RATING ASC</button>
-          <button @click="sort('rating', 'desc')" class="btn btn-primary">RATING DESC</button>
-          </div>
-        </div><div class="row" style="margin-top:2rem;">
-          <div class="col">
-          <strong>TYPE</strong>
-          </div><div class="col">
-          <button @click="typ('car')" class="btn btn-primary">CAR</button>
-          <button @click="typ('phone')" class="btn btn-primary">PHONE</button>
-        </div>
+    <div class="products col-md-12 container">
+      <div class="row" v-if="myNotes.length > 0">
+        <div v-for="(todos,k) in myNotes" :key="k" class="col">
+        <shopping-list class="container" style="margin:1rem; padding: 1rem; min-height: 10rem;" :todos="todos.content"></shopping-list>
         </div>
       </div>
-    </div>
-    <div class="products col-md-9 container">
-      <div class="row" v-if="products.length >0">
-        <div class="card product" v-for="(prod,k) in products" :key="k" style="width: 18rem;">
-          <img class="card-img-top" :src="prod.photoURL" alt="Card image cap">
-          <div class="card-body">
-            <h5 class="card-title">{{prod.title}}</h5>
-            <p class="card-text">Some quick example text to build on the card title and make up the bulk of the card's content.</p>
-            <span><strong>PRICE : {{prod.price}}</strong></span>
-            <a href="#" class="btn btn-primary" @click="addToCart(prod)">ADD TO CART</a>
-          </div>
-        </div>
-
-      </div>
-      <div class="row" v-else>
+      <!-- <div class="row" v-else>
         <div class="card col-md-11" style="min-height: 20rem;">
-          <h2 style="font-weight: 900; margin-top: 10rem;">SORRY NO PRODUCTS</h2>
+          <h2 style="font-weight: 900; margin-top: 10rem;">SORRY NO Notes</h2>
         </div>
-      </div>
+      </div> -->
     </div>
   </div>
 </div>
-
+<fab
+   :position="position"
+   :bg-color="bgColor"
+   :actions="fabActions"
+   @add="add"
+></fab>
 <sweet-modal ref="modal" width="80%">
-  <h2>MY CART</h2>
-  <div class="container-fluid">
-      <div class="row">
-        <div class="card product" v-for="(prod,k) in cart.products" :key="k" style="width: 18rem;">
-          <img class="card-img-top" :src="prod.photoURL" alt="Card image cap">
-          <div class="card-body">
-            <h5 class="card-title">{{prod.title}}</h5>
-            <p class="card-text">Some quick example text to build on the card title and make up the bulk of the card's content.</p>
-            <span><strong>PRICE : {{prod.price}}</strong></span>
-            <a href="#" class="btn btn-primary" @click="remove(prod)">REMOVE</a>
-          </div>
-        </div>
-         <div class="card product"  style="width: 38rem;">
-          <div class="card-body">
-            <h5 class="card-title">CART SUMMARY</h5>
-            <p class="card-text"><strong>TOTAL AMOUNT : {{cart.total}}</strong></p>
-            <a href="#" class="btn btn-primary" @click="swal('Congrats')">CHECKOUT</a>
-          </div>
-        </div>
-      </div>
-    </div>
 </sweet-modal>
   </div>
 </template>
@@ -101,31 +52,57 @@
 <script>
 import firebase from 'firebase'
 import { SweetModal, SweetModalTab } from 'sweet-modal-vue'
+import fab from 'vue-fab'
 import swal from 'sweetalert'
+import ShoppingList from './ShoppingList'
 require('firebase/firestore')
 export default {
   name: 'Home',
   components: {
     SweetModal,
-    SweetModalTab
+    SweetModalTab,
+    fab,
+    ShoppingList
   },
   data () {
     return {
+      users: [],
+      myNotes: [],
       searchtext: null,
-      products: [],
-      cart: {
-        products: [],
-        total: null
-      }
+      SharedNotes: [],
+      editedTodo: null,
+      visibility: 'all',
+      bgColor: '#009688',
+      oldNotes: [],
+      position: 'bottom-right',
+      fabActions: [
+        {
+          name: 'add',
+          icon: 'add'
+        }
+      ]
+    }
+  },
+  watch: {
+    myNotes (newVal) {
+      console.log('changed')
+      var vm = this
+      newVal.forEach(function (doc, index) {
+        if (doc.content !== vm.oldNotes[index].content) {
+          console.log()
+        }
+      })
     }
   },
   methods: {
-    sort: function (val, order) {
-      firebase.firestore().collection('products').orderBy(val, order).get().then(querySnapshot => {
-        this.products = []
-        querySnapshot.forEach(doc => {
-          this.products.push(doc.data())
-        })
+    setValue () {
+      this.oldNotes = this.myNotes
+    },
+    add () {
+      this.myNotes.push({
+        title: 'SHOPPING LIST',
+        content: [],
+        sharedWith: null
       })
     },
     signout: function () {
@@ -135,64 +112,26 @@ export default {
         this.$router.replace('/login')
       })
     },
-    typ: function (val) {
-      firebase.firestore().collection('products').where('type', '==', val).get().then(querySnapshot => {
-        this.products = []
-        querySnapshot.forEach(doc => {
-          this.products.push(doc.data())
-        })
-      })
-    },
-    addToCart: function (product) {
-      firebase.firestore().collection('user').doc(this.currentUser.uid).collection('cart').add(product).then(success => {
-        swal('Success', 'Added to card', 'success')
-      }).catch(err => {
-        console.log(err)
-        swal('Oops!', 'Something went wrong!', 'error')
-      })
-    },
     swal: function (mes) {
       swal(mes)
-    },
-    remove: function (prod) {
-      firebase.firestore().collection('user').doc(this.currentUser.uid).collection('cart').doc(prod.id).delete().then(succ => {
-        swal('Success', 'Removed from cart', 'success')
-        firebase.firestore().collection('user').doc(this.currentUser.uid).collection('cart').get().then(querySnapshot => {
-          this.cart.products = []
-          this.cart.total = 0
-          querySnapshot.forEach(doc => {
-            var d = doc.data()
-            d.id = doc.id
-            this.cart.products.push(d)
-            this.cart.total += doc.data().price
-          })
-        })
-      })
-    },
-    viewCart: function () {
-      console.log('d')
-      firebase.firestore().collection('user').doc(this.currentUser.uid).collection('cart').get().then(querySnapshot => {
-        this.cart.products = []
-        this.cart.total = 0
-        querySnapshot.forEach(doc => {
-          var d = doc.data()
-          d.id = doc.id
-          this.cart.products.push(d)
-          this.cart.total += doc.data().price
-        })
-        this.$refs.modal.open()
-      })
     }
   },
   computed: {
     currentUser: () => firebase.auth().currentUser
   },
   mounted () {
-    firebase.firestore().collection('products').get().then(querySnapshot => {
-      this.products = []
+    firebase.firestore().collection('notes').doc(this.currentUser.uid).collection('myNotes').get().then(querySnapshot => {
+      this.myNotes = []
+      console.log('h')
       querySnapshot.forEach(doc => {
-        this.products.push(doc.data())
+        var dat = doc.data()
+        dat.content.forEach(function (todo, index) {
+          todo.id = index
+        })
+        dat.id = doc.id
+        this.myNotes.push(dat)
       })
+      this.setValue()
     })
   }
 }
@@ -210,10 +149,6 @@ export default {
 .filters {
   margin-top: 2rem;
   padding-left: 3rem;
-}
-.btn {
-  margin: .3rem;
-  min-width: 10rem;
 }
 .filter {
   padding-top: 2rem;
